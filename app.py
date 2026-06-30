@@ -49,6 +49,9 @@ p, span, label, h1, h2, h3, h4,
     border-radius: 6px !important;
     background-color: {T['secondary']} !important;
 }}
+[data-baseweb="tag"] span {{
+    color: #ffffff !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
