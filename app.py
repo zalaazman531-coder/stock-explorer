@@ -65,20 +65,8 @@ def get_era_label(start_date, end_date):
 
 st.set_page_config(page_title="Stock Explorer", layout="wide")
 
-dark_mode  = st.sidebar.toggle("Dark mode",  value=False)
-phone_mode = st.sidebar.toggle("Phone mode", value=False)
+dark_mode = st.sidebar.toggle("Dark mode", value=False)
 T = DARK if dark_mode else LIGHT
-
-phone_css = """
-    .block-container { padding: 0.75rem 0.6rem 2rem !important; }
-    h1  { font-size: 1.5rem  !important; line-height: 1.3 !important; }
-    h2  { font-size: 1.2rem  !important; }
-    h3  { font-size: 1.05rem !important; }
-    p, span, label { font-size: 0.95rem !important; }
-    [data-testid="stSlider"] [role="slider"] { width: 22px !important; height: 22px !important; }
-    .stNumberInput input, .stTextInput input { min-height: 2.6rem !important; font-size: 1rem !important; }
-    [data-baseweb="select"] > div { min-height: 2.6rem !important; }
-""" if phone_mode else ""
 
 st.markdown(f"""
 <style>
@@ -113,8 +101,36 @@ p, span, label, h1, h2, h3, h4,
 [data-baseweb="tag"] span {{
     color: #ffffff !important;
 }}
-{".stSelectbox label, .stNumberInput label {{ color: #ffffff !important; }} .stSelectbox [data-baseweb='select'] span, .stSelectbox [data-baseweb='select'] div {{ color: #ffffff !important; }}" if dark_mode else ""}
-{phone_css}
+{".stSelectbox label, .stNumberInput label { color: #ffffff !important; } .stSelectbox [data-baseweb='select'] span, .stSelectbox [data-baseweb='select'] div { color: #ffffff !important; }" if dark_mode else ""}
+
+@media (max-width: 768px) {{
+    .block-container {{
+        padding: 0.75rem 0.6rem 2rem !important;
+    }}
+    h1  {{ font-size: 1.5rem  !important; line-height: 1.3 !important; }}
+    h2  {{ font-size: 1.2rem  !important; }}
+    h3  {{ font-size: 1.05rem !important; }}
+    p, span, label {{ font-size: 0.95rem !important; }}
+    [data-testid="stHorizontalBlock"] {{
+        flex-wrap: wrap !important;
+    }}
+    [data-testid="column"] {{
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        min-width: 0 !important;
+    }}
+    [data-testid="stSlider"] [role="slider"] {{
+        width: 24px !important;
+        height: 24px !important;
+    }}
+    .stNumberInput input, .stTextInput input {{
+        min-height: 2.8rem !important;
+        font-size: 1rem !important;
+    }}
+    [data-baseweb="select"] > div {{
+        min-height: 2.8rem !important;
+    }}
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -178,16 +194,13 @@ if not daily_returns.empty:
     most_volatile = volatility.idxmax()
     st.success(f"**Most Volatile** — {most_volatile} swung +/-{volatility[most_volatile]:.2f}% per day on average in the selected period")
 
-cards_per_row = 2 if phone_mode else len(chosen)
-for i in range(0, len(chosen), cards_per_row):
-    row = chosen[i : i + cards_per_row]
-    for col, t in zip(st.columns(len(row)), row):
-        series = dff[t].dropna()
-        if len(series) >= 2:
-            g = (series.iloc[-1] / series.iloc[0] - 1) * 100
-            col.metric(t, f"{series.iloc[-1]:.2f}x", f"{g:+.1f}%")
-        else:
-            col.metric(t, "n/a", "no data")
+for col, t in zip(st.columns(len(chosen)), chosen):
+    series = dff[t].dropna()
+    if len(series) >= 2:
+        g = (series.iloc[-1] / series.iloc[0] - 1) * 100
+        col.metric(t, f"{series.iloc[-1]:.2f}x", f"{g:+.1f}%")
+    else:
+        col.metric(t, "n/a", "no data")
 
 fact = get_era_fact(date_range[0], date_range[1])
 st.success(f"**Did You Know?** — {fact}")
@@ -198,14 +211,13 @@ CHART_LAYOUT = dict(
     plot_bgcolor=T["bg"],
     font_color=T["text"],
     title_font=dict(size=22, color=title_font_color),
-    margin=dict(l=10, r=10, t=50, b=10) if phone_mode else dict(l=40, r=40, t=60, b=40),
+    margin=dict(l=40, r=40, t=60, b=40),
 )
-chart_h = 320 if phone_mode else 450
 
 fig_line = px.line(
     dff, x="date", y=chosen,
     title=f"Normalized price — {date_range[0].strftime('%b %Y')} to {date_range[1].strftime('%b %Y')}",
-    color_discrete_sequence=SAGE_GREENS, height=chart_h,
+    color_discrete_sequence=SAGE_GREENS, height=450,
 )
 fig_line.update_layout(**CHART_LAYOUT)
 fig_line.update_xaxes(gridcolor=T["grid"], title="")
@@ -217,7 +229,7 @@ fig_bar = px.bar(
     bar_df, x="Stock", y="Growth (%)",
     title=f"Total growth in selected period ({era_label})",
     color="Growth (%)", color_continuous_scale=["#c8dbc9", "#6b9468", "#3d6b4f"],
-    text_auto=".1f", height=chart_h,
+    text_auto=".1f", height=450,
 )
 fig_bar.update_layout(**CHART_LAYOUT, coloraxis_showscale=False)
 fig_bar.update_xaxes(gridcolor=T["grid"], title="")
@@ -229,13 +241,9 @@ st.subheader("What if I had invested in AAPL?")
 
 aapl_years = sorted(df.loc[df["AAPL"].notna(), "date"].dt.year.unique().tolist())
 
-if phone_mode:
-    amount = st.number_input("Investment amount (EUR)", min_value=1, value=1000, step=100)
-    year   = st.selectbox("Year of investment", aapl_years)
-else:
-    col_amt, col_yr = st.columns(2)
-    amount = col_amt.number_input("Investment amount (EUR)", min_value=1, value=1000, step=100)
-    year   = col_yr.selectbox("Year of investment", aapl_years)
+col_amt, col_yr = st.columns(2)
+amount = col_amt.number_input("Investment amount (EUR)", min_value=1, value=1000, step=100)
+year   = col_yr.selectbox("Year of investment", aapl_years)
 
 yr_df       = df.loc[df["date"].dt.year == year, "AAPL"].dropna()
 start_price = yr_df.iloc[0]
