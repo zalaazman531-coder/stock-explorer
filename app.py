@@ -66,6 +66,7 @@ p, span, label, h1, h2, h3, h4,
 [data-baseweb="tag"] span {{
     color: #ffffff !important;
 }}
+{".stSelectbox label, .stNumberInput label { color: #ffffff !important; }" if dark_mode else ""}
 {phone_css}
 </style>
 """, unsafe_allow_html=True)
@@ -138,11 +139,13 @@ for i in range(0, len(chosen), cards_per_row):
 st.success("**Did You Know?** — Amazon started as an online bookstore in 1994. By 2000 it had expanded to music, DVDs and electronics — and its stock had already fallen over 90% from its dot-com peak.")
 
 # ── Charts ───────────────────────────────────────────────────────────────────────────
+title_font_color = "#e8ddd0" if dark_mode else T["text"]
 CHART_LAYOUT = dict(
     paper_bgcolor=T["bg"],
     plot_bgcolor=T["bg"],
     font_color=T["text"],
-    margin=dict(l=10, r=10, t=40, b=10) if phone_mode else dict(l=40, r=40, t=50, b=40),
+    title_font=dict(size=22, color=title_font_color),
+    margin=dict(l=10, r=10, t=50, b=10) if phone_mode else dict(l=40, r=40, t=60, b=40),
 )
 chart_h = 320 if phone_mode else 450
 
