@@ -13,7 +13,6 @@ DARK  = dict(bg="#1c1c1c", secondary="#2a2a2a", text="#f0e6d3", primary="#c4738a
 TICKERS = ["AAPL", "MSFT", "GOOG", "AMZN", "NFLX", "META"]
 IPO_YEAR = {"AAPL": 1980, "MSFT": 1986, "GOOG": 2004, "AMZN": 1997, "NFLX": 2002, "META": 2012}
 
-# ── Era facts (sourced from Wikipedia) ──────────────────────────────────────────
 ERA_FACTS = [
     ((2000, 2002), [
         "Between 1995 and March 2000 the Nasdaq surged 600%, then plummeted 78% by October 2002, erasing all gains. (Wikipedia: Dot-com bubble)",
@@ -64,14 +63,12 @@ def get_era_label(start_date, end_date):
             return f"{era_start}–{era_end}"
     return f"{start_date.year}–{end_date.year}"
 
-# ── Page config ────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Stock Explorer", layout="wide")
 
 dark_mode  = st.sidebar.toggle("Dark mode",  value=False)
 phone_mode = st.sidebar.toggle("Phone mode", value=False)
 T = DARK if dark_mode else LIGHT
 
-# ── CSS ────────────────────────────────────────────────────────────────────────────
 phone_css = """
     .block-container { padding: 0.75rem 0.6rem 2rem !important; }
     h1  { font-size: 1.5rem  !important; line-height: 1.3 !important; }
@@ -116,12 +113,11 @@ p, span, label, h1, h2, h3, h4,
 [data-baseweb="tag"] span {{
     color: #ffffff !important;
 }}
-{".stSelectbox label, .stNumberInput label { color: #ffffff !important; }" if dark_mode else ""}
+{".stSelectbox label, .stNumberInput label {{ color: #ffffff !important; }} .stSelectbox [data-baseweb='select'] span, .stSelectbox [data-baseweb='select'] div {{ color: #ffffff !important; }}" if dark_mode else ""}
 {phone_css}
 </style>
 """, unsafe_allow_html=True)
 
-# ── Data ───────────────────────────────────────────────────────────────────────────
 st.title("Stock Explorer")
 
 @st.cache_data(ttl=3600, show_spinner="Fetching latest stock data from Yahoo Finance...")
@@ -140,7 +136,6 @@ with st.spinner("Loading data..."):
 
 tickers = [c for c in df.columns if c != "date"]
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────────
 chosen = st.sidebar.multiselect("Choose stocks", tickers, default=["AAPL", "MSFT", "GOOG"])
 if not chosen:
     st.warning("Pick at least one stock from the sidebar.")
@@ -151,7 +146,6 @@ if late_ipos:
     notes = ", ".join(f"{t} (from {y})" for t, y in late_ipos.items())
     st.caption(f"Note: some stocks have shorter histories — {notes}.")
 
-# ── Date slider ─────────────────────────────────────────────────────────────────────
 min_date = df["date"].min().date()
 max_date = df["date"].max().date()
 date_range = st.slider(
@@ -165,7 +159,6 @@ dff = df[mask]
 era_label = get_era_label(date_range[0], date_range[1])
 st.caption(f"Showing data for **{date_range[0].strftime('%b %Y')} – {date_range[1].strftime('%b %Y')}** · era: {era_label}")
 
-# ── Banners — all scoped to selected window ──────────────────────────────────────────
 window_growth = {}
 for t in chosen:
     series = dff[t].dropna()
@@ -185,7 +178,6 @@ if not daily_returns.empty:
     most_volatile = volatility.idxmax()
     st.success(f"**Most Volatile** — {most_volatile} swung +/-{volatility[most_volatile]:.2f}% per day on average in the selected period")
 
-# ── Metric cards (window growth) ──────────────────────────────────────────────────────
 cards_per_row = 2 if phone_mode else len(chosen)
 for i in range(0, len(chosen), cards_per_row):
     row = chosen[i : i + cards_per_row]
@@ -197,11 +189,9 @@ for i in range(0, len(chosen), cards_per_row):
         else:
             col.metric(t, "n/a", "no data")
 
-# ── Era-based fun fact ─────────────────────────────────────────────────────────────────
 fact = get_era_fact(date_range[0], date_range[1])
 st.success(f"**Did You Know?** — {fact}")
 
-# ── Charts ───────────────────────────────────────────────────────────────────────────
 title_font_color = "#e8ddd0" if dark_mode else T["text"]
 CHART_LAYOUT = dict(
     paper_bgcolor=T["bg"],
@@ -234,7 +224,6 @@ fig_bar.update_xaxes(gridcolor=T["grid"], title="")
 fig_bar.update_yaxes(gridcolor=T["grid"], title="")
 st.plotly_chart(fig_bar, use_container_width=True)
 
-# ── Investment calculator ─────────────────────────────────────────────────────────
 st.divider()
 st.subheader("What if I had invested in AAPL?")
 
