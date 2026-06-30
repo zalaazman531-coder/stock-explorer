@@ -21,15 +21,33 @@ if not chosen:
     st.warning("Pick at least one stock from the sidebar.")
     st.stop()
 
+# Date-range slider
+min_date, max_date = df["date"].min().date(), df["date"].max().date()
+date_range = st.slider(
+    "Zoom into a period",
+    min_value=min_date,
+    max_value=max_date,
+    value=(min_date, max_date),
+    format="MMM YYYY",
+)
+mask = (df["date"].dt.date >= date_range[0]) & (df["date"].dt.date <= date_range[1])
+dff = df[mask]
+
 st.caption("Prices are indexed to 1.00 at the start, so each line shows growth since Jan 2018.")
 
-# Top grower banner
+# Top grower banner (over full dataset)
 growth_values = {t: (df[t].iloc[-1] - 1) * 100 for t in chosen}
 top_ticker = max(growth_values, key=growth_values.get)
 top_growth = growth_values[top_ticker]
 st.success(f"🏆 **Top grower:** {top_ticker} — {top_growth:+.1f}% since Jan 2018")
 
-# Key numbers: total growth for each chosen stock
+# Most volatile indicator — highest std dev of daily % returns within the selected window
+daily_returns = dff[chosen].pct_change().dropna()
+volatility = daily_returns.std() * 100
+most_volatile = volatility.idxmax()
+st.warning(f"🌪️ **Most volatile in selected period:** {most_volatile} — daily swings of ±{volatility[most_volatile]:.2f}% on average")
+
+# Key numbers: total growth for each chosen stock (full dataset)
 cols = st.columns(len(chosen))
 for col, t in zip(cols, chosen):
     growth = (df[t].iloc[-1] - 1) * 100
@@ -38,9 +56,24 @@ for col, t in zip(cols, chosen):
 # Did you know?
 st.info('💡 **Did you know?** Microsoft\'s 1986 IPO made 3 billionaires and an estimated 12,000 millionaires among its employees.')
 
-# Line chart comparing the chosen stocks over time
-fig = px.line(df, x="date", y=chosen, title="Normalized price over time")
-st.plotly_chart(fig, use_container_width=True)
+# Line chart + bar chart side by side
+chart_col, bar_col = st.columns([3, 2])
+
+with chart_col:
+    fig_line = px.line(dff, x="date", y=chosen, title="Normalized price over time")
+    st.plotly_chart(fig_line, use_container_width=True)
+
+with bar_col:
+    # Growth % from start of selected window to end
+    window_growth = {t: (dff[t].iloc[-1] / dff[t].iloc[0] - 1) * 100 for t in chosen}
+    bar_df = pd.DataFrame({"Stock": list(window_growth.keys()), "Growth (%)": list(window_growth.values())})
+    fig_bar = px.bar(
+        bar_df, x="Stock", y="Growth (%)", title="Total growth in selected period",
+        color="Growth (%)", color_continuous_scale=["#ef4444", "#f59e0b", "#22c55e"],
+        text_auto=".1f",
+    )
+    fig_bar.update_layout(coloraxis_showscale=False)
+    st.plotly_chart(fig_bar, use_container_width=True)
 
 st.divider()
 st.subheader("💶 What if I had invested in AAPL?")
