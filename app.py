@@ -91,13 +91,13 @@ st.caption("Prices are indexed to 1.00 at the start, so each line shows growth s
 growth_values = {t: (df[t].iloc[-1] - 1) * 100 for t in chosen}
 top_ticker = max(growth_values, key=growth_values.get)
 top_growth = growth_values[top_ticker]
-st.success(f"Top grower: {top_ticker} — {top_growth:+.1f}% since Jan 2018")
+st.success(f"**Top Grower** — {top_ticker} is up {top_growth:+.1f}% since Jan 2018")
 
 # Most volatile indicator — same style as top grower
 daily_returns = dff[chosen].pct_change().dropna()
 volatility = daily_returns.std() * 100
 most_volatile = volatility.idxmax()
-st.success(f"Most volatile in selected period: {most_volatile} — daily swings of +/-{volatility[most_volatile]:.2f}% on average")
+st.success(f"**Most Volatile** — {most_volatile} swung +/-{volatility[most_volatile]:.2f}% per day on average in the selected period")
 
 # Key numbers: total growth for each chosen stock (full dataset)
 cols = st.columns(len(chosen))
@@ -106,10 +106,7 @@ for col, t in zip(cols, chosen):
     col.metric(t, f"{df[t].iloc[-1]:.2f}x", f"{growth:+.1f}%")
 
 # Did you know — same style as top grower
-st.success("Did you know? Microsoft's 1986 IPO made 3 billionaires and an estimated 12,000 millionaires among its employees.")
-
-# Line chart + bar chart side by side
-chart_col, bar_col = st.columns([3, 2])
+st.success("**Did You Know?** — Microsoft's 1986 IPO made 3 billionaires and an estimated 12,000 millionaires among its employees.")
 
 CHART_LAYOUT = dict(
     paper_bgcolor=T["bg"],
@@ -117,28 +114,26 @@ CHART_LAYOUT = dict(
     font_color=T["text"],
 )
 
-with chart_col:
-    fig_line = px.line(
-        dff, x="date", y=chosen, title="Normalized price over time",
-        color_discrete_sequence=SAGE_GREENS,
-    )
-    fig_line.update_layout(**CHART_LAYOUT)
-    fig_line.update_xaxes(gridcolor=T["grid"])
-    fig_line.update_yaxes(gridcolor=T["grid"])
-    st.plotly_chart(fig_line, use_container_width=True)
+fig_line = px.line(
+    dff, x="date", y=chosen, title="Normalized price over time",
+    color_discrete_sequence=SAGE_GREENS,
+)
+fig_line.update_layout(**CHART_LAYOUT)
+fig_line.update_xaxes(gridcolor=T["grid"], title="")
+fig_line.update_yaxes(gridcolor=T["grid"], title="")
+st.plotly_chart(fig_line, use_container_width=True)
 
-with bar_col:
-    window_growth = {t: (dff[t].iloc[-1] / dff[t].iloc[0] - 1) * 100 for t in chosen}
-    bar_df = pd.DataFrame({"Stock": list(window_growth.keys()), "Growth (%)": list(window_growth.values())})
-    fig_bar = px.bar(
-        bar_df, x="Stock", y="Growth (%)", title="Total growth in selected period",
-        color="Growth (%)", color_continuous_scale=["#c8dbc9", "#6b9468", "#3d6b4f"],
-        text_auto=".1f",
-    )
-    fig_bar.update_layout(**CHART_LAYOUT, coloraxis_showscale=False)
-    fig_bar.update_xaxes(gridcolor=T["grid"])
-    fig_bar.update_yaxes(gridcolor=T["grid"])
-    st.plotly_chart(fig_bar, use_container_width=True)
+window_growth = {t: (dff[t].iloc[-1] / dff[t].iloc[0] - 1) * 100 for t in chosen}
+bar_df = pd.DataFrame({"Stock": list(window_growth.keys()), "Growth (%)": list(window_growth.values())})
+fig_bar = px.bar(
+    bar_df, x="Stock", y="Growth (%)", title="Total growth in selected period",
+    color="Growth (%)", color_continuous_scale=["#c8dbc9", "#6b9468", "#3d6b4f"],
+    text_auto=".1f",
+)
+fig_bar.update_layout(**CHART_LAYOUT, coloraxis_showscale=False)
+fig_bar.update_xaxes(gridcolor=T["grid"], title="")
+fig_bar.update_yaxes(gridcolor=T["grid"], title="")
+st.plotly_chart(fig_bar, use_container_width=True)
 
 st.divider()
 st.subheader("What if I had invested in AAPL?")
