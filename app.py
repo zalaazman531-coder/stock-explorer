@@ -236,24 +236,25 @@ fig_bar.update_xaxes(gridcolor=T["grid"], title="")
 fig_bar.update_yaxes(gridcolor=T["grid"], title="")
 st.plotly_chart(fig_bar, use_container_width=True)
 
+# ── Investment calculator ────────────────────────────────────────────
 st.divider()
-st.subheader("What if I had invested in AAPL?")
+st.subheader("What if I had invested?")
 
-aapl_years = sorted(df.loc[df["AAPL"].notna(), "date"].dt.year.unique().tolist())
+col_stock, col_amt, col_yr = st.columns(3)
+calc_ticker = col_stock.selectbox("Stock", tickers, index=tickers.index("AAPL") if "AAPL" in tickers else 0)
+calc_years  = sorted(df.loc[df[calc_ticker].notna(), "date"].dt.year.unique().tolist())
+amount      = col_amt.number_input("Investment amount (EUR)", min_value=1, value=1000, step=100)
+year        = col_yr.selectbox("Year of investment", calc_years)
 
-col_amt, col_yr = st.columns(2)
-amount = col_amt.number_input("Investment amount (EUR)", min_value=1, value=1000, step=100)
-year   = col_yr.selectbox("Year of investment", aapl_years)
-
-yr_df       = df.loc[df["date"].dt.year == year, "AAPL"].dropna()
+yr_df       = df.loc[df["date"].dt.year == year, calc_ticker].dropna()
 start_price = yr_df.iloc[0]
-end_price   = df["AAPL"].dropna().iloc[-1]
+end_price   = df[calc_ticker].dropna().iloc[-1]
 end_date    = df["date"].iloc[-1].strftime("%b %Y")
 multiplier  = end_price / start_price
 final_value = amount * multiplier
 profit      = final_value - amount
 
 if profit >= 0:
-    st.success(f"EUR {amount:,.0f} invested in AAPL at the start of {year} would be worth EUR {final_value:,.2f} by {end_date} — a gain of EUR {profit:,.2f} ({(multiplier-1)*100:+.1f}%)")
+    st.success(f"EUR {amount:,.0f} invested in {calc_ticker} at the start of {year} would be worth EUR {final_value:,.2f} by {end_date} — a gain of EUR {profit:,.2f} ({(multiplier-1)*100:+.1f}%)")
 else:
-    st.error(f"EUR {amount:,.0f} invested in AAPL at the start of {year} would be worth EUR {final_value:,.2f} by {end_date} — a loss of EUR {abs(profit):,.2f} ({(multiplier-1)*100:+.1f}%)")
+    st.error(f"EUR {amount:,.0f} invested in {calc_ticker} at the start of {year} would be worth EUR {final_value:,.2f} by {end_date} — a loss of EUR {abs(profit):,.2f} ({(multiplier-1)*100:+.1f}%)")
