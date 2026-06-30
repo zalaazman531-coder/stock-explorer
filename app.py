@@ -2,7 +2,30 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+SAGE_GREENS = ["#3d6b4f", "#4a7c59", "#6b9468", "#87a878", "#9dc49a", "#b5ceb3"]
+CHART_BG = "#eef4f7"
+FONT_COLOR = "#5c1a1a"
+BURGUNDY = "#7a2332"
+
 st.set_page_config(page_title="Stock Explorer", layout="wide")
+
+st.markdown(f"""
+<style>
+/* Number and text inputs */
+.stNumberInput input, .stTextInput input {{
+    border: 1.5px solid {BURGUNDY} !important;
+    border-radius: 6px !important;
+    color: {FONT_COLOR} !important;
+}}
+/* Selectbox */
+[data-baseweb="select"] > div {{
+    border: 1.5px solid {BURGUNDY} !important;
+    border-radius: 6px !important;
+}}
+/* Slider track colour is controlled by primaryColor in config.toml */
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📈 Stock Explorer")
 
 @st.cache_data
@@ -59,8 +82,20 @@ st.info('💡 **Did you know?** Microsoft\'s 1986 IPO made 3 billionaires and an
 # Line chart + bar chart side by side
 chart_col, bar_col = st.columns([3, 2])
 
+CHART_LAYOUT = dict(
+    paper_bgcolor=CHART_BG,
+    plot_bgcolor=CHART_BG,
+    font_color=FONT_COLOR,
+)
+
 with chart_col:
-    fig_line = px.line(dff, x="date", y=chosen, title="Normalized price over time")
+    fig_line = px.line(
+        dff, x="date", y=chosen, title="Normalized price over time",
+        color_discrete_sequence=SAGE_GREENS,
+    )
+    fig_line.update_layout(**CHART_LAYOUT)
+    fig_line.update_xaxes(gridcolor="#c8d8cc")
+    fig_line.update_yaxes(gridcolor="#c8d8cc")
     st.plotly_chart(fig_line, use_container_width=True)
 
 with bar_col:
@@ -69,10 +104,12 @@ with bar_col:
     bar_df = pd.DataFrame({"Stock": list(window_growth.keys()), "Growth (%)": list(window_growth.values())})
     fig_bar = px.bar(
         bar_df, x="Stock", y="Growth (%)", title="Total growth in selected period",
-        color="Growth (%)", color_continuous_scale=["#ef4444", "#f59e0b", "#22c55e"],
+        color="Growth (%)", color_continuous_scale=["#c8dbc9", "#6b9468", "#3d6b4f"],
         text_auto=".1f",
     )
-    fig_bar.update_layout(coloraxis_showscale=False)
+    fig_bar.update_layout(**CHART_LAYOUT, coloraxis_showscale=False)
+    fig_bar.update_xaxes(gridcolor="#c8d8cc")
+    fig_bar.update_yaxes(gridcolor="#c8d8cc")
     st.plotly_chart(fig_bar, use_container_width=True)
 
 st.divider()
